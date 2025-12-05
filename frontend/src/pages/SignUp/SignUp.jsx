@@ -25,12 +25,12 @@ const SignUp = () => {
   console.log(errors)
   const onSubmit = async (data) => {
     const { name, image, email, password } = data;
-    const imgFile = image[0];
-    console.log(imgFile);
+    const imageFile = image[0];
+    console.log(imageFile);
 
     try {
       //1. Upload Image to imgbb
-      const imageUrl = imageUpload(imgFile);
+      const imageUrl = imageUpload(imageFile);
       //2. User Registration
       const result = await createUser(email, password)
 

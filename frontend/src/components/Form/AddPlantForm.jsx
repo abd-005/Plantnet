@@ -1,7 +1,68 @@
+import { useForm } from 'react-hook-form'
+import { imageUpload } from '../../utils'
+import useAuth from '../../hooks/useAuth';
+import axios from 'axios';
+
 const AddPlantForm = () => {
+  const { user } = useAuth();
+
+  // React Hook Form
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm();
+
+  const onSubmit = async (data) => {
+    const { name, image, description, quantity, price, category } = data;
+    const imageFile = image[0];
+
+
+    try {
+      const imageUrl = imageUpload(imageFile);
+
+      const plantData = {
+        image: imageUrl,
+        name,
+        description,
+        quantity: Number(quantity),
+        price: Number(price),
+        category,
+        seller: {
+          image: user?.photoURL,
+          name: user?.displayName,
+          email: user?.email
+        },
+      }
+      const { data } = await axios.post(`${import.meta.env.VITE_API_URL}/plants`, plantData);
+      console.log(data);
+    } catch (err) {
+      console.log(err);
+    }
+    // try {
+    //   //1. Upload Image to imgbb
+    //   const imageUrl = imageUpload(imgFile);
+    //   //2. User Registration
+    //   const result = await createUser(email, password)
+
+    //   //3. Save username & profile photo
+    //   await updateUserProfile(
+    //     name,
+    //     await imageUrl
+    //   )
+    //   console.log(result)
+
+    //   navigate(from, { replace: true })
+    //   toast.success('Signup Successful')
+    //   console.log(result);
+    // } catch (err) {
+    //   console.log(err)
+    //   toast.error(err?.message)
+    // }
+  }
   return (
     <div className='w-full min-h-[calc(100vh-40px)] flex flex-col justify-center items-center text-gray-800 rounded-xl bg-gray-50'>
-      <form>
+      <form onSubmit={handleSubmit(onSubmit)}>
         <div className='grid grid-cols-1 lg:grid-cols-2 gap-10'>
           <div className='space-y-6'>
             {/* Name */}
@@ -11,12 +72,19 @@ const AddPlantForm = () => {
               </label>
               <input
                 className='w-full px-4 py-3 text-gray-800 border border-lime-300 focus:outline-lime-500 rounded-md bg-white'
-                name='name'
                 id='name'
                 type='text'
                 placeholder='Plant Name'
-                required
+                {...register('name', {
+                  required: 'Name is required',
+                  maxLength: {
+                    value: 20,
+                    message: 'Name must be less than 20 characters'
+                  }
+                })}
               />
+              {errors.name && (<div className="text-red-600 mt-1 text-sm">{errors.name.message}
+              </div>)}
             </div>
             {/* Category */}
             <div className='space-y-1 text-sm'>
@@ -24,15 +92,22 @@ const AddPlantForm = () => {
                 Category
               </label>
               <select
-                required
                 className='w-full px-4 py-3 border-lime-300 focus:outline-lime-500 rounded-md bg-white'
-                name='category'
+                {...register('category', {
+                  required: 'Category is required',
+                })}
               >
                 <option value='Indoor'>Indoor</option>
                 <option value='Outdoor'>Outdoor</option>
                 <option value='Succulent'>Succulent</option>
                 <option value='Flowering'>Flowering</option>
               </select>
+              {
+                errors.category && (
+                  <div className="text-red-600 mt-1 text-sm">
+                    {errors.category.message}
+                  </div>)
+              }
             </div>
             {/* Description */}
             <div className='space-y-1 text-sm'>
@@ -44,8 +119,16 @@ const AddPlantForm = () => {
                 id='description'
                 placeholder='Write plant description here...'
                 className='block rounded-md focus:lime-300 w-full h-32 px-4 py-3 text-gray-800  border border-lime-300 bg-white focus:outline-lime-500 '
-                name='description'
+                {...register('description', {
+                  required: 'Description is required',
+                })}
               ></textarea>
+              {
+                errors.description && (
+                  <div className="text-red-600 mt-1 text-sm">
+                    {errors.description.message}
+                  </div>)
+              }
             </div>
           </div>
           <div className='space-y-6 flex flex-col'>
@@ -58,12 +141,23 @@ const AddPlantForm = () => {
                 </label>
                 <input
                   className='w-full px-4 py-3 text-gray-800 border border-lime-300 focus:outline-lime-500 rounded-md bg-white'
-                  name='price'
                   id='price'
                   type='number'
                   placeholder='Price per unit'
-                  required
+                  {...register('price', {
+                    required: 'Price is required',
+                    min: {
+                      value: 0,
+                      message: 'Price must be a positive number'
+                    }
+                  })}
                 />
+                {
+                  errors.price && (
+                    <div className="text-red-600 mt-1 text-sm">
+                      {errors.price.message}
+                    </div>)
+                }
               </div>
 
               {/* Quantity */}
@@ -73,12 +167,23 @@ const AddPlantForm = () => {
                 </label>
                 <input
                   className='w-full px-4 py-3 text-gray-800 border border-lime-300 focus:outline-lime-500 rounded-md bg-white'
-                  name='quantity'
                   id='quantity'
                   type='number'
                   placeholder='Available quantity'
-                  required
+                  {...register('quantity', {
+                    required: 'Quantity is required',
+                    min: {
+                      value: 1,
+                      message: 'Quantity must be at least 1'
+                    }
+                  })}
                 />
+                {
+                  errors.quantity && (
+                    <div className="text-red-600 mt-1 text-sm">
+                      {errors.quantity.message}
+                    </div>)
+                }
               </div>
             </div>
             {/* Image */}
@@ -89,11 +194,19 @@ const AddPlantForm = () => {
                     <input
                       className='text-sm cursor-pointer w-36 hidden'
                       type='file'
-                      name='image'
                       id='image'
                       accept='image/*'
                       hidden
+                      {...register('image', {
+                        required: 'Image is required',
+                      })}
                     />
+                    {
+                      errors.image && (
+                        <div className="text-red-600 mt-1 text-sm">
+                          {errors.image.message}
+                        </div>)
+                    }
                     <div className='bg-lime-500 text-white border border-gray-300 rounded font-semibold cursor-pointer p-1 px-3 hover:bg-lime-500'>
                       Upload
                     </div>

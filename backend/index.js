@@ -53,6 +53,23 @@ const client = new MongoClient(process.env.MONGODB_URI, {
 })
 async function run() {
   try {
+    // Connect the client to the server	(optional starting in v4.7)
+    // plantsDB.plants
+    const db = client.db('plantsDB');
+    const plantsCollection = db.collection('plants');
+
+    // POST All Plants
+    app.post('/plants', async (req, res) => {
+      const plantData = req.body;
+      console.log(plantData);
+      const result =  await plantsCollection.insertOne(plantData);
+      res.send(result);
+    });
+    // GET all Plants
+    app.get('/plants', async (req, res) => {
+      const result =  await plantsCollection.find().toArray();
+      res.send(result);
+    })
     // Send a ping to confirm a successful connection
     await client.db('admin').command({ ping: 1 })
     console.log(
