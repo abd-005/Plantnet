@@ -2,15 +2,52 @@ import { useForm } from 'react-hook-form'
 import { imageUpload } from '../../utils'
 import useAuth from '../../hooks/useAuth';
 import axios from 'axios';
+import { useMutation } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
+import LoadingSpinner from '../Shared/LoadingSpinner';
+import ErrorPage from '../../pages/ErrorPage';
 
 const AddPlantForm = () => {
   const { user } = useAuth();
+
+  // useMutation hook useCase (POST || PUT || PATCH || DELETE)
+  const {
+    isPending,
+    isError,
+    mutateAsync,
+    reset: mutationReset,
+  } = useMutation({
+    mutationFn: async payload =>
+      await axios.post(`${import.meta.env.VITE_API_URL}/plants`, payload),
+    onSuccess: data => {
+      console.log('Plant added successfully:', data);
+      // show success notification or perform other actions
+      toast.success('Plant added successfully');
+      // navigate to my inventory page
+      mutationReset();
+      // Query key invalidate can be done here if needed
+    },
+    onError: error => {
+      console.error('Error adding plant:', error);
+      toast.error('Failed to add plant');
+    },
+    onMutate: payload => {
+      console.log(`I'll post this data---> `, payload);
+    },
+    onSettled: (data, error) => {
+      if (data) console.log(`I'm from onSettled---> `, data);
+      if (error) console.log('Error occurred from onSettled:', error);
+    },
+    retry: 3,
+  });
+  ///////////////// Check useMutation example above ////////////////////
 
   // React Hook Form
   const {
     register,
     handleSubmit,
     formState: { errors },
+    reset,
   } = useForm();
 
   const onSubmit = async (data) => {
@@ -34,8 +71,9 @@ const AddPlantForm = () => {
           email: user?.email
         },
       }
-      const { data } = await axios.post(`${import.meta.env.VITE_API_URL}/plants`, plantData);
-      console.log(data);
+      // const { data } = await axios.post(`${import.meta.env.VITE_API_URL}/plants`, plantData);
+      await mutateAsync(plantData);
+      reset();
     } catch (err) {
       console.log(err);
     }
@@ -60,6 +98,9 @@ const AddPlantForm = () => {
     //   toast.error(err?.message)
     // }
   }
+
+  if (isPending) return <LoadingSpinner />;
+  if (isError) return <ErrorPage />;
   return (
     <div className='w-full min-h-[calc(100vh-40px)] flex flex-col justify-center items-center text-gray-800 rounded-xl bg-gray-50'>
       <form onSubmit={handleSubmit(onSubmit)}>
@@ -220,7 +261,11 @@ const AddPlantForm = () => {
               type='submit'
               className='w-full cursor-pointer p-3 mt-5 text-center font-medium text-white transition duration-200 rounded shadow-md bg-lime-500 '
             >
-              Save & Continue
+              {isPending ? (
+                <TbFidgetSpinner className='animate-spin m-auto' />
+              ) : (
+                'Save & Continue'
+              )}
             </button>
           </div>
         </div>

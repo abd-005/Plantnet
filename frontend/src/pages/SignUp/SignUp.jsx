@@ -4,7 +4,6 @@ import useAuth from '../../hooks/useAuth'
 import { useForm } from 'react-hook-form'
 import { toast } from 'react-hot-toast'
 import { TbFidgetSpinner } from 'react-icons/tb'
-import axios from 'axios'
 import { imageUpload } from '../../utils'
 
 const SignUp = () => {
