@@ -56,7 +56,7 @@ const AddPlantForm = () => {
 
 
     try {
-      const imageUrl = imageUpload(imageFile);
+      const imageUrl = await imageUpload(imageFile);
 
       const plantData = {
         image: imageUrl,
@@ -235,6 +235,7 @@ const AddPlantForm = () => {
                     <input
                       className='text-sm cursor-pointer w-36 hidden'
                       type='file'
+                      name='image'
                       id='image'
                       accept='image/*'
                       hidden
