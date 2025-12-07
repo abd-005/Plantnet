@@ -189,10 +189,10 @@ async function run() {
     //////////////////////////////////////////////////////
 
     // save or update a user in db
-    app.post('user', async (req, res) => {
+    app.post('/user', async (req, res) => {
       const userData = req.body;
-      userData.createdAt = new Date();
-      userData.last_loggedIn = new Date();
+      userData.createdAt = new Date().toISOString();
+      userData.last_loggedIn = new Date().toISOString();
       userData.role = 'customer'; // default role
 
       const query = { email: userData.email };
@@ -211,6 +211,14 @@ async function run() {
       const result = await usersCollection.insertOne(userData);
       res.send(result);
     });
+
+    // get a user's role
+    app.get('/user/role/:email',  async (req, res) => {
+      const email = req.params.email;
+      const result = await usersCollection.findOne({email})
+      res.send({ role: result.role });
+    })
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
