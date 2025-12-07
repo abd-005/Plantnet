@@ -4,7 +4,7 @@ import useAuth from '../../hooks/useAuth'
 import { useForm } from 'react-hook-form'
 import { toast } from 'react-hot-toast'
 import { TbFidgetSpinner } from 'react-icons/tb'
-import { imageUpload } from '../../utils'
+import { imageUpload, saveOrUpdateUser } from '../../utils'
 
 const SignUp = () => {
   const { createUser, updateUserProfile, signInWithGoogle, loading } = useAuth()
@@ -29,14 +29,21 @@ const SignUp = () => {
 
     try {
       //1. Upload Image to imgbb
-      const imageUrl = imageUpload(imageFile);
+      const imageURL = imageUpload(imageFile);
       //2. User Registration
       const result = await createUser(email, password)
+
+      await saveOrUpdateUser({
+        name,
+        email,
+        // role: 'customer',
+        image: await imageURL
+      });
 
       //3. Save username & profile photo
       await updateUserProfile(
         name,
-        await imageUrl
+        await imageURL
       )
       console.log(result)
 
@@ -55,7 +62,13 @@ const SignUp = () => {
   const handleGoogleSignIn = async () => {
     try {
       //User Registration using google
-      await signInWithGoogle()
+      const {user} = await signInWithGoogle()
+
+      await saveOrUpdateUser({
+        name: user?.displayName,
+        email: user?.email,
+        image: await user?.photoURL,
+      });
 
       navigate(from, { replace: true })
       toast.success('Signup Successful')

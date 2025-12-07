@@ -55,6 +55,7 @@ async function run() {
     const db = client.db("plantsDB");
     const plantsCollection = db.collection("plants");
     const ordersCollection = db.collection("orders");
+    const usersCollection = db.collection("users");
 
     //////////////////////////////////////////////////////
     // POST All Plants
@@ -185,10 +186,31 @@ async function run() {
       res.send(result)
     })
 
-
-
     //////////////////////////////////////////////////////
 
+    // save or update a user in db
+    app.post('user', async (req, res) => {
+      const userData = req.body;
+      userData.createdAt = new Date();
+      userData.last_loggedIn = new Date();
+      userData.role = 'customer'; // default role
+
+      const query = { email: userData.email };
+
+      const alreadyExists = await usersCollection.findOne(query);
+      console.log(alreadyExists);
+
+      if (alreadyExists) {
+        console.log('User already exists, updating last_loggedIn');
+        const result = await usersCollection.updateOne(query, {
+          $set: { last_loggedIn: new Date().toISOString() },
+        });
+        return res.send(result);
+      }
+      console.log('Creating new user');
+      const result = await usersCollection.insertOne(userData);
+      res.send(result);
+    });
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
