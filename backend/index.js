@@ -17,7 +17,7 @@ const app = express();
 // middleware
 app.use(
   cors({
-    origin: [process.env.CLIENT_DOMAIN],
+    origin: [process.env.CLIENT_DOMAIN, "http://localhost:5173"],
     credentials: true,
     optionSuccessStatus: 200,
   })
@@ -58,10 +58,35 @@ async function run() {
     const usersCollection = db.collection("users");
     const sellerRequestsCollection = db.collection("sellerRequests");
 
+    /////////////////////////////////////////////////////
+
+    //role middleware
+
+    const verifyADMIN = async (req, res, next) => {
+      const email = req.tokenEmail;
+      const user = await usersCollection.findOne({ email });
+      if (user?.role !== "admin") {
+        return res
+        .status(403)
+        .send({ message: "Admin only Action!", role: user?.role });
+      }
+      next();
+    };
+    const verifySELLER = async (req, res, next) => {
+      const email = req.tokenEmail;
+      const user = await usersCollection.findOne({ email });
+      if (user?.role !== "seller") {
+        return res
+        .status(403)
+        .send({ message: "Seller only Action!", role: user?.role });
+      }
+      next();
+    };
+
     //////////////////////////////////////////////////////
     // POST All Plants
 
-    app.post("/plants", async (req, res) => {
+    app.post("/plants", verifyJWT, verifySELLER, async (req, res) => {
       const plantData = req.body;
       console.log(plantData);
       const result = await plantsCollection.insertOne(plantData);
@@ -168,7 +193,7 @@ async function run() {
     });
 
     // get all orders for a seller by email
-    app.get("/manage-orders/:email", async (req, res) => {
+    app.get("/manage-orders/:email", verifyJWT, verifySELLER, async (req, res) => {
       const email = req.params.email;
 
       const result = await ordersCollection
@@ -180,7 +205,7 @@ async function run() {
     //////////////////////////////////////////////////////
 
     // get all plants for a seller by email
-    app.get("/my-inventory/:email", async (req, res) => {
+    app.get("/my-inventory/:email", verifyJWT, verifySELLER, async (req, res) => {
       const email = req.params.email;
 
       const result = await plantsCollection
@@ -235,13 +260,13 @@ async function run() {
     });
 
     // get all seller requests for admin
-    app.get("/seller-requests",verifyJWT, async (req, res) => {
+    app.get("/seller-requests", verifyJWT, verifyADMIN, async (req, res) => {
       const result = await sellerRequestsCollection.find().toArray();
       res.send(result);
     });
 
     // get all users for admin
-    app.get("/users", verifyJWT, async (req, res) => {
+    app.get("/users", verifyJWT, verifyADMIN, async (req, res) => {
       const adminEmail = req.tokenEmail;
       const result = await usersCollection
         .find({ email: { $ne: adminEmail } })
@@ -250,18 +275,18 @@ async function run() {
     });
 
     // update a user's role
-    app.patch('/update-role', verifyJWT, async (req, res) => {
-      const {email,  role} = req.body;
+    app.patch("/update-role", verifyJWT, verifyADMIN, async (req, res) => {
+      const { email, role } = req.body;
       const result = await usersCollection.updateOne(
         { email },
-        { $set: {role} }
-      )
+        { $set: { role } }
+      );
       await sellerRequestsCollection.deleteOne({ email });
       res.send(result);
-    })
+    });
 
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
+    // await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
     );
