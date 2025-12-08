@@ -1,26 +1,24 @@
-import { useQuery } from '@tanstack/react-query';
-import UserDataRow from '../../../components/Dashboard/TableRows/UserDataRow'
+import React from 'react';
+import SellerRequestDataRow from '../../../components/Dashboard/TableRows/SellerRequestDataRow';
 import useAuth from '../../../hooks/useAuth';
 import useAxiosSecure from '../../../hooks/useAxiosSecure';
+import { useQuery } from '@tanstack/react-query';
 import LoadingSpinner from '../../../components/Shared/LoadingSpinner';
 
-const ManageUsers = () => {
-  const { user } = useAuth();
+const SellerRequest = () => {
+    const { user } = useAuth();
   const axiosSecure = useAxiosSecure();
-  const { 
-    data: users = [],
-    isLoading, 
-    refetch, } = useQuery({
-      queryKey: ['users', user?.email],
+  const {data: requests = [], isLoading,  refetch} = useQuery({
+      queryKey: ['seller-requests', user?.email],
       queryFn: async () => {
-        const result = await axiosSecure(`/users`);
-        return result.data
-      }
+        const result = await axiosSecure(`/seller-requests`);
+      return result.data 
+    }
     })
-  if (isLoading) return <LoadingSpinner />
-  return (
-    <>
-      <div className='container mx-auto px-4 sm:px-8'>
+    console.log(requests);
+    if (isLoading) return <LoadingSpinner />
+    return (
+        <div className='container mx-auto px-4 sm:px-8'>
         <div className='py-8'>
           <div className='-mx-4 sm:-mx-8 px-4 sm:px-8 py-4 overflow-x-auto'>
             <div className='inline-block min-w-full shadow rounded-lg overflow-hidden'>
@@ -37,24 +35,16 @@ const ManageUsers = () => {
                       scope='col'
                       className='px-5 py-3 bg-white  border-b border-gray-200 text-gray-800  text-left text-sm uppercase font-normal'
                     >
-                      Role
-                    </th>
-
-
-                    <th
-                      scope='col'
-                      className='px-5 py-3 bg-white  border-b border-gray-200 text-gray-800  text-left text-sm uppercase font-normal'
-                    >
                       Action
                     </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {users.map((user) => (
-                    <UserDataRow
-                      refetch={refetch}
-                      key={user?._id}
-                      user={user}
+                  {requests.map((request) => (
+                    <SellerRequestDataRow
+                    refetch={refetch}
+                      key={request._id }
+                      request={request}
                     />
                   ))}
                 </tbody>
@@ -63,8 +53,7 @@ const ManageUsers = () => {
           </div>
         </div>
       </div>
-    </>
-  )
-}
+    );
+};
 
-export default ManageUsers
+export default SellerRequest;
